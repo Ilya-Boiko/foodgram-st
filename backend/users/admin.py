@@ -4,8 +4,8 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-# Удалите или закомментируйте следующую строку
-# @admin.register(User)
-# class CustomUserAdmin(UserAdmin):
-#     list_display = ('username', 'email', 'first_name', 'last_name', 'is_active')
-#     search_fields = ('email', 'username')
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+     list_display = ('username', 'email', 'first_name', 'last_name', 'is_active')
+     search_fields = ('email', 'username')

@@ -27,9 +27,6 @@ services:
     build: ./gateway/
     env_file: .env
     volumes:
-      - ./frontend/build:/usr/share/nginx/html/
-      - ./docs/:/usr/share/nginx/html/api/docs/
       - static:/staticfiles
-      
     ports:
       - "80:80"

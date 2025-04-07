@@ -1,5 +1,34 @@
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
+
+class UserManager(BaseUserManager):
+    def _create_user(self, email, username, first_name, last_name, password, **extra_fields):
+        if not email:
+            raise ValueError('Email обязателен')
+        if not password:
+            raise ValueError('Пароль обязателен')
+            
+        email = self.normalize_email(email)
+        user = self.model(
+            email=email,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            **extra_fields
+        )
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, username, first_name, last_name, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, username, first_name, last_name, password, **extra_fields)
+
+    def create_superuser(self, email, username, first_name, last_name, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        return self._create_user(email, username, first_name, last_name, password, **extra_fields)
 
 class User(AbstractUser):
     email = models.EmailField(
@@ -21,6 +50,13 @@ class User(AbstractUser):
         blank=True,
         verbose_name="Аватар"
     )
+    # Удаляем поле shopping_cart, чтобы устранить циклическую зависимость
+    # Позже добавим его через отдельную миграцию
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
+
+    objects = UserManager()
 
     class Meta:
         ordering = ['id']
@@ -28,4 +64,4 @@ class User(AbstractUser):
         verbose_name_plural = "Пользователи"
 
     def __str__(self):
-        return self.username
+        return self.email

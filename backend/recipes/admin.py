@@ -7,16 +7,24 @@ class RecipeIngredientInline(admin.TabularInline):
     model = RecipeIngredient
     extra = 1
     autocomplete_fields = ('ingredient',)
+    min_num = 1
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author')
-    search_fields = ('name', 'author__username', 'ingredients__name')
+    list_display = ('name', 'author', 'cooking_time')
+    list_filter = ('author', 'cooking_time')
+    search_fields = ('name', 'author__username', 'author__email', 'text')
     inlines = [RecipeIngredientInline]
-
+    
     def get_queryset(self, request):
-        qs = super().get_queryset(request)
-        return qs.prefetch_related('ingredients')
+        return super().get_queryset(request).select_related('author').prefetch_related('ingredients')
+
+@admin.register(RecipeIngredient)
+class RecipeIngredientAdmin(admin.ModelAdmin):
+    list_display = ('recipe', 'ingredient', 'amount')
+    list_filter = ('recipe', 'ingredient')
+    search_fields = ('recipe__name', 'ingredient__name')
+    autocomplete_fields = ('recipe', 'ingredient')
 
     #def get_queryset(self, request):
         #qs = super().get_queryset(request)
