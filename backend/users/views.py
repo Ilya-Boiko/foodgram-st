@@ -18,7 +18,7 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
 
     def get_permissions(self):
-        if self.action == 'create':
+        if self.action in ['create', 'retrieve']:
             permission_classes = [AllowAny]
         else:
             permission_classes = [IsAuthenticated]
@@ -79,40 +79,22 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['put', 'delete'], permission_classes=[IsAuthenticated])
     def set_avatar(self, request):
-        # Для DELETE запроса - удаляем аватар
         if request.method == 'DELETE':
             if request.user.avatar:
                 request.user.avatar.delete()
-                request.user.avatar = None
-                request.user.save()
-            serializer = UserSerializer(request.user, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
-
-        # Для PUT запроса
-        if request.method == 'PUT':
-            # Если данные не предоставлены или пустые, или avatar is None - возвращаем текущего пользователя без изменений
-            if not request.data or request.data.get('avatar') is None or request.data.get('avatar') == '':
-                serializer = UserSerializer(request.user, context={'request': request})
-                return Response(serializer.data, status=status.HTTP_200_OK)
-
-            # Обрабатываем данные аватара
-            serializer = SetAvatarSerializer(
-                data=request.data,
-                context={'request': request}
-            )
-            if serializer.is_valid():
-                user = serializer.save()
-                response_serializer = UserSerializer(user, context={'request': request})
-                return Response(
-                    response_serializer.data,
-                    status=status.HTTP_200_OK
-                )
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(
-            {'error': 'Метод не разрешен'},
-            status=status.HTTP_405_METHOD_NOT_ALLOWED
+            return Response({"avatar": None}, status=status.HTTP_200_OK)
+        
+        serializer = SetAvatarSerializer(
+            data=request.data,
+            context={'request': request}
         )
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                serializer.to_representation(user),
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserMeView(generics.RetrieveAPIView):
     serializer_class = UserSerializer
@@ -120,13 +102,3 @@ class UserMeView(generics.RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context['request'] = self.request
-        return context
-
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)

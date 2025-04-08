@@ -10,6 +10,10 @@ from .serializers import (
     CreateUpdateRecipeSerializer
 )
 from .permissions import IsAuthorOrReadOnly
+from django.urls import reverse
+from django.db.models import Sum
+from django.http import HttpResponse
+from datetime import datetime
 
 # Create your views here.
 
@@ -21,7 +25,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'author__username']
 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve', 'get_link']:
             return [AllowAny()]
         return [IsAuthenticated()]
 
@@ -98,3 +102,45 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
         request.user.favorites.remove(recipe)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=True, methods=['get'], url_path='get-link')
+    def get_link(self, request, pk=None):
+        recipe = get_object_or_404(Recipe, id=pk)
+        base_url = request.build_absolute_uri('/').rstrip('/')
+        frontend_url = f"{base_url}/recipes/{recipe.id}/"
+        return Response({'short-link': frontend_url})
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def download_shopping_cart(self, request):
+        # Получаем все рецепты из списка покупок пользователя
+        recipes = request.user.shopping_cart.all()
+        
+        # Получаем список ингредиентов с суммированным количеством
+        ingredients = recipes.values(
+            'ingredients__name',
+            'ingredients__measurement_unit'
+        ).annotate(
+            total_amount=Sum('recipe_ingredients__amount')
+        ).order_by('ingredients__name')
+
+        # Формируем текст списка покупок
+        shopping_list = [
+            "Список покупок\n",
+            f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+        ]
+
+        # Добавляем каждый ингредиент в список
+        for ingredient in ingredients:
+            name = ingredient['ingredients__name']
+            unit = ingredient['ingredients__measurement_unit']
+            amount = ingredient['total_amount']
+            shopping_list.append(f"{name} ({unit}) — {amount}\n")
+
+        # Создаем response с файлом
+        response = HttpResponse(
+            ''.join(shopping_list),
+            content_type='text/plain; charset=utf-8'
+        )
+        response['Content-Disposition'] = f'attachment; filename=shopping_list_{datetime.now().strftime("%d%m%Y_%H%M")}.txt'
+        
+        return response

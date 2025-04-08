@@ -23,7 +23,6 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
-    avatar = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -37,12 +36,6 @@ class UserSerializer(serializers.ModelSerializer):
         if not request or request.user.is_anonymous:
             return False
         return request.user.subscriptions.filter(id=obj.id).exists()
-
-    def get_avatar(self, obj):
-        request = self.context.get('request')
-        if obj.avatar:
-            return request.build_absolute_uri(obj.avatar.url)
-        return None
 
 class UserSubscriptionSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
@@ -141,7 +134,7 @@ class SetPasswordSerializer(serializers.Serializer):
         return user
 
 class SetAvatarSerializer(serializers.Serializer):
-    avatar = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    avatar = serializers.CharField(required=False, allow_null=True)
 
     def validate_avatar(self, value):
         if value and not value.startswith('data:image'):
@@ -151,24 +144,18 @@ class SetAvatarSerializer(serializers.Serializer):
     def create(self, validated_data):
         user = self.context['request'].user
         avatar_data = validated_data.get('avatar')
-        request = self.context.get('request')
 
+        if avatar_data is None:
+            # Если данные аватара не предоставлены, оставляем текущий аватар
+            return user
 
-        # Если в запросе есть delete_avatar=true - удаляем аватар
-        if request.data.get('delete_avatar'):
-            print('Deleting avatar because delete_avatar=true')
+        # Если данные аватара пустые, удаляем текущий аватар
+        if avatar_data == '':
             if user.avatar:
                 user.avatar.delete()
-                user.avatar = None
-                user.save()
             return user
 
-        # Если avatar_data is None или пустая строка - оставляем текущий аватар
-        if avatar_data is None or avatar_data == '':
-            print('Keeping current avatar because avatar_data is None or empty')
-            return user
-
-        # Если есть новые данные аватара - сохраняем новый аватар
+        # Декодирование base64 и сохранение нового изображения
         try:
             format, imgstr = avatar_data.split(';base64,')
             ext = format.split('/')[-1]
@@ -179,32 +166,16 @@ class SetAvatarSerializer(serializers.Serializer):
             
             # Удаляем старый аватар перед сохранением нового
             if user.avatar:
-                old_avatar = user.avatar
-                user.avatar = None
-                user.save()
-                old_avatar.delete()
+                user.avatar.delete()
             
-            # Сохраняем новый аватар
             user.avatar.save(filename, ContentFile(data), save=True)
-            print('Saved new avatar')
         except Exception as e:
-            print(f'Error saving avatar: {str(e)}')
             raise serializers.ValidationError("Ошибка при сохранении изображения")
         
         return user
 
-    def update(self, instance, validated_data):
-        return self.create(validated_data)
-
     def to_representation(self, instance):
         request = self.context.get('request')
-        print('=== SetAvatarSerializer to_representation ===')
-        print(f'Instance avatar: {instance.avatar}')
-        if not instance.avatar:
-            print('Returning None for avatar')
-            return {"avatar": None}
-        url = request.build_absolute_uri(instance.avatar.url)
-        print(f'Returning URL: {url}')
         return {
-            "avatar": url
+            'avatar': request.build_absolute_uri(instance.avatar.url) if instance.avatar else None
         } 
