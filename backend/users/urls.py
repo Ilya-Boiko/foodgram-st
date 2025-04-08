@@ -8,6 +8,13 @@ urlpatterns = [
     path('users/set_password/', UserViewSet.as_view({'post': 'set_password'}), name='set-password'),
     path('users/me/avatar/', UserViewSet.as_view({
         'put': 'set_avatar',
-        'delete': 'delete_avatar'
+        'delete': 'set_avatar'
     }), name='user-avatar'),
+    path('users/<int:id>/subscribe/', UserViewSet.as_view({
+        'post': 'subscribe',
+        'delete': 'subscribe'
+    }), name='user-subscribe'),
+    path('users/subscriptions/', UserViewSet.as_view({
+        'get': 'subscriptions'
+    }), name='user-subscriptions'),
 ] 

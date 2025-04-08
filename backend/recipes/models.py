@@ -10,7 +10,7 @@ class Recipe(models.Model):
         verbose_name='Автор'
     )
     name = models.CharField(
-        max_length=200,
+        max_length=256,
         verbose_name='Название'
     )
     text = models.TextField(
@@ -28,6 +28,18 @@ class Recipe(models.Model):
         through='RecipeIngredient',
         verbose_name='Ингредиенты'
     )
+    in_shopping_cart = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='shopping_cart',
+        verbose_name='В списке покупок',
+        blank=True
+    )
+    favorited = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='favorites',
+        verbose_name='В избранном',
+        blank=True
+    )
 
     class Meta:
         ordering = ['-id']
@@ -37,12 +49,35 @@ class Recipe(models.Model):
     def __str__(self):
         return f'{self.name} (автор: {self.author.username})'
 
+    @property
+    def is_favorited(self):
+        return False
+
+    @property
+    def is_in_shopping_cart(self):
+        return False
+
 class RecipeIngredient(models.Model):
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    amount = models.PositiveIntegerField(verbose_name='Количество')
+    recipe = models.ForeignKey(
+        Recipe, 
+        on_delete=models.CASCADE,
+        related_name='recipe_ingredients',
+        verbose_name='Рецепт'
+    )
+    ingredient = models.ForeignKey(
+        Ingredient, 
+        on_delete=models.CASCADE,
+        verbose_name='Ингредиент'
+    )
+    amount = models.PositiveIntegerField(
+        verbose_name='Количество',
+        help_text='Количество ингредиента'
+    )
 
     class Meta:
         unique_together = ('recipe', 'ingredient')
         verbose_name = 'Ингредиент в рецепте'
         verbose_name_plural = 'Ингредиенты в рецепте'
+
+    def __str__(self):
+        return f'{self.ingredient.name} ({self.amount} {self.ingredient.measurement_unit})'

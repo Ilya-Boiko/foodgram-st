@@ -16,6 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from ingredients.views import IngredientViewSet
+
+router = DefaultRouter()
+router.register('ingredients', IngredientViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,4 +28,5 @@ urlpatterns = [
     path('api/auth/', include('djoser.urls.authtoken')),
     path('api/', include('users.urls')),
     path('api/', include('recipes.urls')),
+    path('api/', include(router.urls)),
 ]

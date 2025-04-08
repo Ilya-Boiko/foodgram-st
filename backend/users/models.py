@@ -50,8 +50,13 @@ class User(AbstractUser):
         blank=True,
         verbose_name="Аватар"
     )
-    # Удаляем поле shopping_cart, чтобы устранить циклическую зависимость
-    # Позже добавим его через отдельную миграцию
+    subscriptions = models.ManyToManyField(
+        'self',
+        related_name='subscribers',
+        symmetrical=False,
+        verbose_name="Подписки",
+        blank=True
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
@@ -64,4 +69,8 @@ class User(AbstractUser):
         verbose_name_plural = "Пользователи"
 
     def __str__(self):
-        return self.email
+        return self.username
+
+    @property
+    def is_subscribed(self):
+        return False  # Будет реализовано в сериализаторе
