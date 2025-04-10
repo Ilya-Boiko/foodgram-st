@@ -25,8 +25,8 @@ services:
     volumes:
       - static:/frontend_static
 
-  gateway:
-    build: ./gateway/
+  nginx:
+    build: ./nginx/
     env_file: .env
     volumes:
       - static:/staticfiles
