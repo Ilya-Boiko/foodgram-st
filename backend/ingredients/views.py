@@ -1,7 +1,5 @@
-from django.shortcuts import render
 from rest_framework import viewsets, filters
 from rest_framework.permissions import AllowAny
-from django.db.models import Q
 from .models import Ingredient
 from .serializers import IngredientSerializer
 

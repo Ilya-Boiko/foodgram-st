@@ -1,8 +1,7 @@
-from django.shortcuts import render
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny, SAFE_METHODS, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
 from .models import Recipe
 from .serializers import (
@@ -10,12 +9,12 @@ from .serializers import (
     CreateUpdateRecipeSerializer
 )
 from .permissions import IsAuthorOrReadOnly
-from django.urls import reverse
 from django.db.models import Sum
 from django.http import HttpResponse
 from datetime import datetime
 
 # Create your views here.
+
 
 class RecipeViewSet(viewsets.ModelViewSet):
     queryset = Recipe.objects.all().order_by('-id')
@@ -31,14 +30,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Recipe.objects.all().order_by('-id')
-        
+
         # Фильтрация по избранному
         is_favorited = self.request.query_params.get('is_favorited')
         if is_favorited and self.request.user.is_authenticated:
             queryset = queryset.filter(favorited=self.request.user)
 
         # Фильтрация по списку покупок
-        is_in_shopping_cart = self.request.query_params.get('is_in_shopping_cart')
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart')
         if is_in_shopping_cart and self.request.user.is_authenticated:
             queryset = queryset.filter(in_shopping_cart=self.request.user)
 
@@ -62,7 +62,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
-        
+
         if request.method == 'POST':
             if recipe in request.user.shopping_cart.all():
                 return Response(
@@ -72,7 +72,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request.user.shopping_cart.add(recipe)
             serializer = RecipeSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         if recipe not in request.user.shopping_cart.all():
             return Response(
                 {'errors': 'Рецепт не в списке покупок'},
@@ -84,7 +84,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post', 'delete'], permission_classes=[IsAuthenticated])
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
-        
+
         if request.method == 'POST':
             if recipe in request.user.favorites.all():
                 return Response(
@@ -94,7 +94,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             request.user.favorites.add(recipe)
             serializer = RecipeSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        
+
         if recipe not in request.user.favorites.all():
             return Response(
                 {'errors': 'Рецепт не в избранном'},
@@ -114,7 +114,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def download_shopping_cart(self, request):
         # Получаем все рецепты из списка покупок пользователя
         recipes = request.user.shopping_cart.all()
-        
+
         # Получаем список ингредиентов с суммированным количеством
         ingredients = recipes.values(
             'ingredients__name',
@@ -142,5 +142,5 @@ class RecipeViewSet(viewsets.ModelViewSet):
             content_type='text/plain; charset=utf-8'
         )
         response['Content-Disposition'] = f'attachment; filename=shopping_list_{datetime.now().strftime("%d%m%Y_%H%M")}.txt'
-        
+
         return response
