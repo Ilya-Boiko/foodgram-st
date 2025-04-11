@@ -10,4 +10,7 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
+# Создаем директорию для статики
+RUN mkdir -p /backend_static/static
+
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend.wsgi"]

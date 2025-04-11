@@ -17,6 +17,14 @@ services:
     volumes:
       - static:/backend_static
       - media:/app/media
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py makemigrations users recipes ingredients &&
+             python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             cp -r /app/collected_static/. /backend_static/static/ &&
+             gunicorn --bind 0.0.0.0:8000 backend.wsgi"
 
   frontend:
     env_file: .env
@@ -33,3 +41,6 @@ services:
       - media:/media
     ports:
       - "80:80"
+    depends_on:
+      - backend
+      - frontend
