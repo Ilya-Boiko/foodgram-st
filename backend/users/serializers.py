@@ -6,6 +6,7 @@ from recipes.models import Recipe
 
 User = get_user_model()
 
+
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     image = serializers.SerializerMethodField()
 
@@ -20,6 +21,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
                 return request.build_absolute_uri(obj.image.url)
             return obj.image.url
         return None
+
 
 class UserSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
@@ -37,6 +39,7 @@ class UserSerializer(serializers.ModelSerializer):
             return False
         return request.user.subscriptions.filter(id=obj.id).exists()
 
+
 class UserSubscriptionSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
@@ -49,26 +52,27 @@ class UserSubscriptionSerializer(UserSerializer):
         request = self.context.get('request')
         if not request:
             return []
-        
+
         limit = request.query_params.get('recipes_limit')
         recipes = obj.recipes.all()
-        
+
         if limit:
             try:
                 limit = int(limit)
                 recipes = recipes[:limit]
             except (ValueError, TypeError):
                 pass
-        
+
         serializer = RecipeMinifiedSerializer(
-            recipes, 
-            many=True, 
+            recipes,
+            many=True,
             context={'request': request}
         )
         return serializer.data
 
     def get_recipes_count(self, obj):
         return obj.recipes.count()
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(required=True)
@@ -113,6 +117,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 {"error": f"Ошибка при создании пользователя: {str(e)}"}
             )
 
+
 class SetPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(required=True)
     current_password = serializers.CharField(required=True)
@@ -132,6 +137,7 @@ class SetPasswordSerializer(serializers.Serializer):
         user.set_password(self.validated_data['new_password'])
         user.save()
         return user
+
 
 class SetAvatarSerializer(serializers.Serializer):
     avatar = serializers.CharField(required=False, allow_null=True)
@@ -160,22 +166,23 @@ class SetAvatarSerializer(serializers.Serializer):
             format, imgstr = avatar_data.split(';base64,')
             ext = format.split('/')[-1]
             data = base64.b64decode(imgstr)
-            
+
             from django.core.files.base import ContentFile
             filename = f'avatar_{user.id}.{ext}'
-            
+
             # Удаляем старый аватар перед сохранением нового
             if user.avatar:
                 user.avatar.delete()
-            
+
             user.avatar.save(filename, ContentFile(data), save=True)
-        except Exception as e:
-            raise serializers.ValidationError("Ошибка при сохранении изображения")
-        
+        except:
+            raise serializers.ValidationError(
+                "Ошибка при сохранении изображения")
+
         return user
 
     def to_representation(self, instance):
         request = self.context.get('request')
         return {
             'avatar': request.build_absolute_uri(instance.avatar.url) if instance.avatar else None
-        } 
+        }
