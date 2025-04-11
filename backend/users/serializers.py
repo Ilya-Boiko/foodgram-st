@@ -175,9 +175,10 @@ class SetAvatarSerializer(serializers.Serializer):
                 user.avatar.delete()
 
             user.avatar.save(filename, ContentFile(data), save=True)
-        except:
-            raise serializers.ValidationError(
-                "Ошибка при сохранении изображения")
+        except ValueError:
+            raise serializers.ValidationError("Неверный формат base64")
+        except Exception as e:
+            raise serializers.ValidationError(f"Ошибка при сохранении изображения: {str(e)}")
 
         return user
 
