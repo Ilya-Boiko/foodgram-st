@@ -19,19 +19,16 @@ class CookingTimeFilter(admin.SimpleListFilter):
         cooking_times = Recipe.objects.values_list(
             'cooking_time', flat=True
         ).distinct().order_by('cooking_time')
-        
+
         if not cooking_times:
             return []
 
         times_list = list(cooking_times)
         if len(times_list) >= 3:
-            # Используем только существующие значения для расчета квантилей
             q1, q2 = quantiles(times_list, n=3)
-            # Округляем значения до ближайших 5 минут вверх
             q1 = max(5, ((q1 + 4) // 5) * 5)
             q2 = max(10, ((q2 + 4) // 5) * 5)
         else:
-            # Если мало рецептов, используем фиксированные интервалы
             q1, q2 = 15, 30
 
         fast_count = Recipe.objects.filter(cooking_time__lte=q1).count()
@@ -47,22 +44,7 @@ class CookingTimeFilter(admin.SimpleListFilter):
         ]
 
     def queryset(self, request, queryset):
-        times = Recipe.objects.values_list(
-            'cooking_time', flat=True
-        ).distinct().order_by('cooking_time')
-        
-        if not times:
-            return queryset
-
-        times_list = list(times)
-        if len(times_list) >= 3:
-            q1, q2 = quantiles(times_list, n=3)
-            # Используем те же округленные значения
-            q1 = max(5, ((q1 + 4) // 5) * 5)
-            q2 = max(10, ((q2 + 4) // 5) * 5)
-        else:
-            q1, q2 = 15, 30
-
+        # Используем сохраненные значения q1 и q2
         if self.value() == 'fast':
             return queryset.filter(cooking_time__lte=q1)
         if self.value() == 'medium':
@@ -72,20 +54,20 @@ class CookingTimeFilter(admin.SimpleListFilter):
         return queryset
 
 @admin.register(User)
-class CustomUserAdmin(UserAdmin):
+class UserAdmin(UserAdmin):
     list_display = (
         'id', 'username', 'get_full_name', 'email',
         'get_avatar', 'get_recipes_count',
         'get_subscriptions_count', 'get_subscribers_count'
     )
-    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
+    list_filter = ('is_staff', 'is_superuser', 'is_active')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('username',)
     filter_horizontal = ('groups', 'user_permissions',)
 
     @admin.display(description='ФИО')
     def get_full_name(self, obj):
-        return f'{obj.first_name} {obj.last_name}'.strip() or '—'
+        return f'{obj.first_name} {obj.last_name}'.strip()
 
     @admin.display(description='Аватар')
     @mark_safe
@@ -144,7 +126,7 @@ class RecipeAdmin(admin.ModelAdmin):
 
 @admin.register(Ingredient)
 class IngredientAdmin(admin.ModelAdmin):
-    list_display = ('name', 'measurement_unit')
+    list_display = ('name', 'measurement_unit', 'get_recipes_count')
     list_filter = ('measurement_unit',)
-    search_fields = ('name',)
+    search_fields = ('measurement_unit',)
 

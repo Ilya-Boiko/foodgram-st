@@ -5,26 +5,6 @@ from django.core.validators import RegexValidator
 import re
 from django.utils import timezone
 
-def validate_username(value):
-    # Находим все недопустимые символы
-    invalid_chars = ''.join(set(re.findall(r'[^\w.@+-]', value)))
-    if invalid_chars:
-        raise ValidationError(
-            f'Имя пользователя содержит недопустимые символы: {invalid_chars}. '
-            'Допускаются только буквы, цифры и символы @/./+/-/_'
-        )
-
-def validate_cooking_time(value):
-    if value < 1:
-        raise ValidationError(
-            'Время приготовления должно быть не менее 1 минуты'
-        )
-
-def validate_amount(value):
-    if value < 1:
-        raise ValidationError(
-            'Количество ингредиента должно быть не менее 1'
-        )
 
 def validate_image(value):
     if not value.content_type.startswith('image/'):
@@ -42,10 +22,10 @@ class User(AbstractUser):
         validators=[
             RegexValidator(
                 regex=r'^[\w.@+-]+$',
-                message='Имя пользователя содержит недопустимые символы'
+                message='Никнейм пользователя содержит недопустимые символы'
             )
         ],
-        verbose_name='Имя пользователя'
+        verbose_name='Никнейм пользователя'
     )
     first_name = models.CharField(
         max_length=150,
@@ -57,7 +37,6 @@ class User(AbstractUser):
     )
     avatar = models.ImageField(
         upload_to='users/avatars/',
-        validators=[validate_image],
         blank=True,
         null=True,
         verbose_name='Аватар'
@@ -94,10 +73,11 @@ class Recipe(models.Model):
     ingredients = models.ManyToManyField(
         'Ingredient',
         through='RecipeIngredient',
+        related_name='recipe_ingredients',
         verbose_name='Ингредиенты'
     )
     cooking_time = models.PositiveSmallIntegerField(
-        validators=[validate_cooking_time],
+        validators=[MinValueValidator(0)],
         verbose_name='Время приготовления (в минутах)'
     )
     pub_date = models.DateTimeField(
@@ -115,11 +95,9 @@ class Recipe(models.Model):
 
 class Ingredient(models.Model):
     name = models.CharField(
-        max_length=200,
         verbose_name='Название'
     )
     measurement_unit = models.CharField(
-        max_length=200,
         verbose_name='Единица измерения'
     )
 
@@ -150,7 +128,7 @@ class RecipeIngredient(models.Model):
         verbose_name='Ингредиент'
     )
     amount = models.PositiveSmallIntegerField(
-        validators=[validate_amount],
+        validators=[MinValueValidator(1)],
         verbose_name='Количество'
     )
 
@@ -180,10 +158,6 @@ class Favorite(models.Model):
         related_name='in_favorites',
         verbose_name='Рецепт'
     )
-    added = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата добавления'
-    )
 
     class Meta:
         verbose_name = 'Избранное'
@@ -203,18 +177,14 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='shopping_cart',
+        related_name='shopping_carts',
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='in_shopping_cart',
+        related_name='shopping_carts',
         verbose_name='Рецепт'
-    )
-    added = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата добавления'
     )
 
     class Meta:
@@ -241,12 +211,8 @@ class Subscription(models.Model):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='subscribers',
+        related_name='authors',
         verbose_name='Автор'
-    )
-    created = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name='Дата подписки'
     )
 
     class Meta:
