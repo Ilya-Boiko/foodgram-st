@@ -28,4 +28,4 @@ cp .env.example .env
 ```
 docker compose up
 ```
-5. Сайт будет доступен по адресу http://localhost
+5. [Сайт будет доступен по адресу](http://localhost)

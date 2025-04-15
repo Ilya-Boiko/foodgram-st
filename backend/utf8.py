@@ -8,7 +8,7 @@ with open('ingredients.json', 'r', encoding='utf-8') as f:
 formatted_data = []
 for i, ingredient in enumerate(ingredients):
     formatted_data.append({
-        "model": "ingredients.ingredient",
+        "model": "recipes.ingredient",
         "pk": i + 1,
         "fields": {
             "name": ingredient["name"],
