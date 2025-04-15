@@ -1,8 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
-from .models import User, Recipe, Ingredient, RecipeIngredient, Subscription, Favorite, ShoppingCart
+from .models import User, Recipe, Ingredient, RecipeIngredient
 from django.utils.safestring import mark_safe
-from django.db.models import Count, Q
 from statistics import quantiles
 
 class RecipeIngredientInline(admin.TabularInline):

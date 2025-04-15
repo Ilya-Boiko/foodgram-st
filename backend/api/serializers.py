@@ -3,7 +3,6 @@ from django.contrib.auth.password_validation import validate_password
 from recipes.models import Recipe, RecipeIngredient, Ingredient, User
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from drf_extra_fields.fields import Base64ImageField
-from django.core.files.base import ContentFile
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(read_only=True)

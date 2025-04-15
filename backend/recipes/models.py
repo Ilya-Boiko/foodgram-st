@@ -1,8 +1,7 @@
 from django.db import models
-from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-from django.core.validators import MinValueValidator, RegexValidator
+from django.core.validators import RegexValidator
 import re
 from django.utils import timezone
 
