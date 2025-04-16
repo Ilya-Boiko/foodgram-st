@@ -4,5 +4,5 @@ from api.views import RecipeViewSet
 app_name = 'recipes'
 
 urlpatterns = [
-    path('recipes/<int:pk>/', RecipeViewSet.as_view({'get': 'retrieve'}), name='recipe_detail'),
+    path('<int:pk>/', RecipeViewSet.as_view({'get': 'retrieve'}), name='recipe_detail'),
 ]

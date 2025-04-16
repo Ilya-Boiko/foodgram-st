@@ -6,12 +6,12 @@ from drf_extra_fields.fields import Base64ImageField
 from djoser.serializers import SetPasswordSerializer as DjoserSetPasswordSerializer
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
-    image = serializers.ImageField(read_only=True)
+    image = Base64ImageField(required=False)
 
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
-        read_only_fields = fields
+        read_only_fields = ('id', 'name', 'cooking_time')
 
 class UserSerializer(DjoserUserSerializer):
     is_subscribed = serializers.SerializerMethodField()

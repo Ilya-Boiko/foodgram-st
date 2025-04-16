@@ -7,13 +7,14 @@ from django.db.models import Sum
 from datetime import datetime
 from django.urls import reverse
 from djoser.views import UserViewSet as DjoserUserViewSet
+from django.http import FileResponse
+from io import BytesIO
 from recipes.models import Recipe, User, Ingredient, RecipeIngredient, Favorite, ShoppingCart, Subscription
 from .serializers import (
     CreateUpdateRecipeSerializer,
     UserSerializer,
     SetAvatarSerializer,
     IngredientSerializer,
-    RecipeMinifiedSerializer,
     RecipeReadSerializer
 )
 from .permissions import IsAuthorOrReadOnly
@@ -172,47 +173,57 @@ class RecipeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, id=pk)
-        frontend_url = request.build_absolute_uri(
-            reverse('recipes:recipe_detail', kwargs={'pk': recipe.id})
-        )
+        frontend_url = request.build_absolute_uri(f'/recipes/{recipe.id}/')
         return Response({'short-link': frontend_url})
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def download_shopping_cart(self, request):
-        # Получаем ID рецептов из корзины пользователя
-        recipes_in_cart = ShoppingCart.objects.filter(user=request.user).values_list('recipe', flat=True)
+        try:
+            # Получаем ID рецептов из корзины пользователя
+            recipes_in_cart = ShoppingCart.objects.filter(user=request.user).values_list('recipe', flat=True)
 
-        # Получаем список ингредиентов с суммированным количеством
-        ingredients = RecipeIngredient.objects.filter(
-            recipe__in=recipes_in_cart
-        ).values(
-            'ingredient__name',
-            'ingredient__measurement_unit'
-        ).annotate(
-            total_amount=Sum('amount')
-        ).order_by('ingredient__name')
+            if not recipes_in_cart:
+                return Response(
+                    {'errors': 'Список покупок пуст'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
 
-        # Формируем текст списка покупок
-        shopping_list = [
-            "Список покупок\n",
-            f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
-        ]
+            # Получаем список ингредиентов с суммированным количеством
+            ingredients = RecipeIngredient.objects.filter(
+                recipe__in=recipes_in_cart
+            ).values(
+                'ingredient__name',
+                'ingredient__measurement_unit'
+            ).annotate(
+                total_amount=Sum('amount')
+            ).order_by('ingredient__name')
 
-        # Добавляем каждый ингредиент в список
-        for ingredient in ingredients:
-            name = ingredient['ingredient__name']
-            unit = ingredient['ingredient__measurement_unit']
-            amount = ingredient['total_amount']
-            shopping_list.append(f"{name.capitalize()} ({unit}) — {amount}\n")
+            # Формируем текст списка покупок
+            shopping_list = [
+                "Список покупок\n",
+                f"Дата: {datetime.now().strftime('%d.%m.%Y %H:%M')}\n\n"
+            ]
 
-        # Создаем response с файлом
-        response = FileResponse(
-            BytesIO(''.join(shopping_list).encode('utf-8')),
-            as_attachment=True,
-            filename=f'shopping_list_{datetime.now().strftime("%d%m%Y_%H%M")}.txt'
-        )
+            # Добавляем каждый ингредиент в список
+            for ingredient in ingredients:
+                name = ingredient['ingredient__name']
+                unit = ingredient['ingredient__measurement_unit']
+                amount = ingredient['total_amount']
+                shopping_list.append(f"{name.capitalize()} ({unit}) — {amount}\n")
 
-        return response
+            # Создаем response с файлом
+            response = FileResponse(
+                BytesIO(''.join(shopping_list).encode('utf-8')),
+                as_attachment=True,
+                filename=f'shopping_list_{datetime.now().strftime("%d%m%Y_%H%M")}.txt'
+            )
+
+            return response
+        except Exception as e:
+            return Response(
+                {'errors': f'Ошибка при создании списка покупок: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()

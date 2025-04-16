@@ -44,7 +44,7 @@
   "pk": 35,
   "fields": {
     "password": "pbkdf2_sha256$870000$nGuI2ayVWG2E7piSVddZLZ$gK83npw7uvFT2E9KD1qUo/mZ19SNgEEJymIde7uyEqc=",
-    "last_login": "2025-04-16T10:20:43.782Z",
+    "last_login": "2025-04-16T13:56:53.909Z",
     "is_superuser": true,
     "is_staff": true,
     "is_active": true,
@@ -53,7 +53,7 @@
     "username": "Ilya",
     "first_name": "Илья",
     "last_name": "Бойко",
-    "avatar": "users/avatars/21c6d80f-ef27-4f29-8863-4cb16f624106.png",
+    "avatar": "users/avatars/7c53d789-c4f7-4693-880d-f0542129aec1.png",
     "groups": [],
     "user_permissions": [],
     "shopping_carts": []
@@ -137,7 +137,7 @@
   "fields": {
     "author": 35,
     "name": "Тест",
-    "image": "recipes/images/4768edca-2887-425b-b15b-d41f2dfa7c28.jpg",
+    "image": "recipes/images/906b316d-66f2-408d-a48d-a23518dc3aa4.png",
     "text": "Тест",
     "cooking_time": 14,
     "pub_date": "2025-04-15T00:42:30.612Z"
@@ -17705,7 +17705,7 @@
 },
 {
   "model": "recipes.recipeingredient",
-  "pk": 79,
+  "pk": 81,
   "fields": {
     "recipe": 76,
     "ingredient": 1828,
@@ -18307,10 +18307,10 @@
 },
 {
   "model": "authtoken.token",
-  "pk": "61211d9b942370a7863947367ebbcd675649d4b2",
+  "pk": "726b2bf3c6fb399138254a8f4a69795a35b448c5",
   "fields": {
     "user": 35,
-    "created": "2025-04-15T00:41:44.460Z"
+    "created": "2025-04-16T13:56:53.905Z"
   }
 },
 {

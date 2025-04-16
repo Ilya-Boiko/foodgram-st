@@ -39,7 +39,8 @@ services:
     env_file: .env
     volumes:
       - static:/staticfiles
-      - media:/media
+      - media:/app/media
+      - ./docs:/docs
     ports:
       - "80:80"
     depends_on:

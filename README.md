@@ -30,10 +30,8 @@ cp .env.example .env
 ```
 docker compose up
 ```
-5. Загрузить фикстуры:
-```
-docker-compose exec backend python manage.py loaddata db.json
-```
-6. [Сайт](http://localhost)
+5. [Сайт](http://localhost)
 
-7. [Доступ к админке](http://localhost/admin)
+6. [Доступ к админке](http://localhost/admin)
+
+7. [Доступ к спецификации](http://localhost/api/docs)
