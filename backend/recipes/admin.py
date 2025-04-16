@@ -25,32 +25,49 @@ class CookingTimeFilter(admin.SimpleListFilter):
 
         times_list = list(cooking_times)
         if len(times_list) >= 3:
-            q1, q2 = quantiles(times_list, n=3)
-            q1 = max(5, ((q1 + 4) // 5) * 5)
-            q2 = max(10, ((q2 + 4) // 5) * 5)
+            q1_value, q2_value = quantiles(times_list, n=3)
+            q1_value = max(5, ((q1_value + 4) // 5) * 5)
+            q2_value = max(10, ((q2_value + 4) // 5) * 5)
         else:
-            q1, q2 = 15, 30
+            q1_value, q2_value = 15, 30
 
-        fast_count = Recipe.objects.filter(cooking_time__lte=q1).count()
+        fast_count = Recipe.objects.filter(cooking_time__lte=q1_value).count()
         medium_count = Recipe.objects.filter(
-            cooking_time__gt=q1, cooking_time__lte=q2
+            cooking_time__gt=q1_value, cooking_time__lte=q2_value
         ).count()
-        slow_count = Recipe.objects.filter(cooking_time__gt=q2).count()
+        slow_count = Recipe.objects.filter(cooking_time__gt=q2_value).count()
 
         return [
-            ('fast', f'До {q1} минут ({fast_count})'),
-            ('medium', f'{q1}-{q2} минут ({medium_count})'),
-            ('slow', f'Более {q2} минут ({slow_count})'),
+            ('fast', f'До {q1_value} минут ({fast_count})'),
+            ('medium', f'{q1_value}-{q2_value} минут ({medium_count})'),
+            ('slow', f'Более {q2_value} минут ({slow_count})'),
         ]
 
     def queryset(self, request, queryset):
-        # Используем сохраненные значения q1 и q2
+        if not self.value():
+            return queryset
+
+        cooking_times = Recipe.objects.values_list(
+            'cooking_time', flat=True
+        ).distinct().order_by('cooking_time')
+
+        if not cooking_times:
+            return queryset
+
+        times_list = list(cooking_times)
+        if len(times_list) >= 3:
+            q1_value, q2_value = quantiles(times_list, n=3)
+            q1_value = max(5, ((q1_value + 4) // 5) * 5)
+            q2_value = max(10, ((q2_value + 4) // 5) * 5)
+        else:
+            q1_value, q2_value = 15, 30
+
         if self.value() == 'fast':
-            return queryset.filter(cooking_time__lte=q1)
+            return queryset.filter(cooking_time__lte=q1_value)
         if self.value() == 'medium':
-            return queryset.filter(cooking_time__gt=q1, cooking_time__lte=q2)
+            return queryset.filter(cooking_time__gt=q1_value, cooking_time__lte=q2_value)
         if self.value() == 'slow':
-            return queryset.filter(cooking_time__gt=q2)
+            return queryset.filter(cooking_time__gt=q2_value)
         return queryset
 
 @admin.register(User)

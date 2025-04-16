@@ -1,8 +1,11 @@
 from django.urls import path
-from api.views import RecipeViewSet
+from django.shortcuts import redirect
 
 app_name = 'recipes'
 
+def redirect_to_recipe(request, pk):
+    return redirect(f'/recipes/{pk}/')
+
 urlpatterns = [
-    path('<int:pk>/', RecipeViewSet.as_view({'get': 'retrieve'}), name='recipe_detail'),
+    path('<int:pk>/', redirect_to_recipe, name='recipe_detail'),
 ]

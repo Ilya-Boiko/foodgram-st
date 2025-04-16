@@ -10,6 +10,7 @@ def validate_image(value):
     if not value.content_type.startswith('image/'):
         raise ValidationError('Загруженный файл должен быть изображением')
 
+
 class User(AbstractUser):
     email = models.EmailField(
         max_length=254,
@@ -59,6 +60,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class Recipe(models.Model):
     author = models.ForeignKey(
         User,
@@ -99,6 +101,7 @@ class Recipe(models.Model):
     def __str__(self):
         return self.name
 
+
 class Ingredient(models.Model):
     name = models.CharField(
         verbose_name='Название'
@@ -120,6 +123,7 @@ class Ingredient(models.Model):
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
+
 
 class RecipeIngredient(models.Model):
     recipe = models.ForeignKey(
@@ -151,6 +155,7 @@ class RecipeIngredient(models.Model):
     def __str__(self):
         return f'{self.ingredient.name} ({self.amount} {self.ingredient.measurement_unit})'
 
+
 class Favorite(models.Model):
     user = models.ForeignKey(
         User,
@@ -180,6 +185,7 @@ class Favorite(models.Model):
     def __str__(self):
         return f'{self.user.username} - {self.recipe.name}'
 
+
 class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
@@ -208,6 +214,7 @@ class ShoppingCart(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.recipe.name}'
+
 
 class Subscription(models.Model):
     user = models.ForeignKey(
