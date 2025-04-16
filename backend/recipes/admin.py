@@ -86,11 +86,11 @@ class UserAdmin(UserAdmin):
 
     @admin.display(description='Подписчиков')
     def get_subscribers_count(self, obj):
-        return obj.subscribers.count()
+        return obj.authors.count()
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related(
-            'recipes', 'subscriptions', 'subscribers'
+            'recipes', 'subscriptions', 'authors'
         )
 
 @admin.register(Recipe)
@@ -129,4 +129,8 @@ class IngredientAdmin(admin.ModelAdmin):
     list_display = ('name', 'measurement_unit', 'get_recipes_count')
     list_filter = ('measurement_unit',)
     search_fields = ('measurement_unit',)
+
+    @admin.display(description='Рецептов')
+    def get_recipes_count(self, obj):
+        return obj.recipe_ingredients.count()
 

@@ -3,6 +3,7 @@ from django.contrib.auth.password_validation import validate_password
 from recipes.models import Recipe, RecipeIngredient, Ingredient, User
 from djoser.serializers import UserSerializer as DjoserUserSerializer
 from drf_extra_fields.fields import Base64ImageField
+from djoser.serializers import SetPasswordSerializer as DjoserSetPasswordSerializer
 
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     image = serializers.ImageField(read_only=True)
@@ -10,7 +11,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
-        read_only_fields = ('id', 'name', 'image', 'cooking_time')
+        read_only_fields = fields
 
 class UserSerializer(DjoserUserSerializer):
     is_subscribed = serializers.SerializerMethodField()
@@ -30,10 +31,10 @@ class UserSerializer(DjoserUserSerializer):
             and request.user.subscriptions.filter(author=obj).exists()
         )
 
-class UserCreateSerializer(serializers.ModelSerializer):
-    class Meta:
+class UserCreateSerializer(DjoserUserSerializer):
+    class Meta(DjoserUserSerializer.Meta):
         model = User
-        fields = ('email', 'username', 'first_name', 'last_name', 'password')
+        fields = DjoserUserSerializer.Meta.fields + ('password',)
         extra_kwargs = {'password': {'write_only': True}}
 
     def validate_password(self, value):
@@ -43,28 +44,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = User.objects.create_user(**validated_data)
         return user
-
-class SetPasswordSerializer(serializers.Serializer):
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-
-    def validate_current_password(self, value):
-        user = self.context['request'].user
-        if not user.check_password(value):
-            raise serializers.ValidationError(
-                'Неверный текущий пароль'
-            )
-        return value
-
-    def validate_new_password(self, value):
-        validate_password(value)
-        return value
-
-    def save(self, **kwargs):
-        user = self.context['request'].user
-        user.set_password(self.validated_data['new_password'])
-        user.save()
-        return user
+    
+class SetPasswordSerializer(DjoserSetPasswordSerializer):
+    pass
 
 class SetAvatarSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=True)
@@ -105,7 +87,7 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit')
         read_only_fields = ('id', 'name', 'measurement_unit')
 
-class RecipeIngredientSerializer(serializers.ModelSerializer):
+class RecipeIngredientReadSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(
         queryset=Ingredient.objects.all(),
         source='ingredient'
@@ -118,15 +100,15 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'name', 'measurement_unit', 'amount')
+        read_only_fields = fields
 
-class RecipeSerializer(serializers.ModelSerializer):
+class RecipeReadSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
-    ingredients = RecipeIngredientSerializer(
+    ingredients = RecipeIngredientReadSerializer(
         source='recipe_ingredients',
         many=True,
         read_only=True
     )
-    image = Base64ImageField()
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
@@ -151,7 +133,7 @@ class RecipeSerializer(serializers.ModelSerializer):
         return (
             request 
             and request.user.is_authenticated 
-            and request.user.shopping_cart.filter(recipe=obj).exists()
+            and request.user.shopping_cart_items.filter(recipe=obj).exists()
         )
 
 class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
@@ -165,29 +147,32 @@ class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
-class CreateUpdateRecipeSerializer(RecipeSerializer):
+class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientCreateSerializer(many=True, write_only=True)
+    image = Base64ImageField(required=True)
+
+    class Meta:
+        model = Recipe
+        fields = ('name', 'text', 'image', 'cooking_time', 'ingredients')
+        read_only_fields = ('id',) 
 
     def validate_ingredients(self, value):
         if not value:
-            raise serializers.ValidationError(
-                "Нужен хотя бы один ингредиент"
-            )
+            raise serializers.ValidationError("Нужен хотя бы один ингредиент")
         
         ingredient_ids = []
         for item in value:
             ingredient_id = item['ingredient'].id
             if ingredient_id in ingredient_ids:
-                raise serializers.ValidationError(
-                    "Ингредиенты не должны повторяться"
-                )
+                raise serializers.ValidationError("Ингредиенты не должны повторяться")
             ingredient_ids.append(ingredient_id)
         
         return value
 
+    
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
-        recipe = super().create(validated_data)
+        recipe = Recipe.objects.create(**validated_data)
         self._create_ingredients(recipe, ingredients_data)
         return recipe
 
@@ -199,11 +184,11 @@ class CreateUpdateRecipeSerializer(RecipeSerializer):
         return instance
 
     def _create_ingredients(self, recipe, ingredients_data):
-        RecipeIngredient.objects.bulk_create([
+        RecipeIngredient.objects.bulk_create(
             RecipeIngredient(
                 recipe=recipe,
                 ingredient=ingredient_item['ingredient'],
                 amount=ingredient_item['amount']
             )
             for ingredient_item in ingredients_data
-        ]) 
+        ) 

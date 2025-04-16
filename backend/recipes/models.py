@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, MinValueValidator
 import re
 from django.utils import timezone
 
@@ -40,6 +40,12 @@ class User(AbstractUser):
         blank=True,
         null=True,
         verbose_name='Аватар'
+    )
+    shopping_carts = models.ManyToManyField(
+        'ShoppingCart',
+        related_name='users',
+        blank=True,
+        verbose_name='Списки покупок'
     )
 
     USERNAME_FIELD = 'email'
@@ -158,6 +164,7 @@ class Favorite(models.Model):
         related_name='in_favorites',
         verbose_name='Рецепт'
     )
+    added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Избранное'
@@ -177,15 +184,16 @@ class ShoppingCart(models.Model):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='shopping_carts',
+        related_name='shopping_cart_items',
         verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='shopping_carts',
+        related_name='in_shopping_carts',
         verbose_name='Рецепт'
     )
+    added = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Список покупок'
@@ -214,6 +222,7 @@ class Subscription(models.Model):
         related_name='authors',
         verbose_name='Автор'
     )
+    created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = 'Подписка'

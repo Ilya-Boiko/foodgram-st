@@ -15,7 +15,8 @@
     "last_name": "Иванов",
     "avatar": "users/avatars/18786429-8869-4bce-9b6d-e839f0741e64.jpg",
     "groups": [],
-    "user_permissions": []
+    "user_permissions": [],
+    "shopping_carts": []
   }
 },
 {
@@ -34,7 +35,8 @@
     "last_name": "Высоцкая",
     "avatar": "users/avatars/87da1c00-b28a-426f-8f40-9a84e1cd20ee.png",
     "groups": [],
-    "user_permissions": []
+    "user_permissions": [],
+    "shopping_carts": []
   }
 },
 {
@@ -42,7 +44,7 @@
   "pk": 35,
   "fields": {
     "password": "pbkdf2_sha256$870000$nGuI2ayVWG2E7piSVddZLZ$gK83npw7uvFT2E9KD1qUo/mZ19SNgEEJymIde7uyEqc=",
-    "last_login": "2025-04-15T00:41:44.464Z",
+    "last_login": "2025-04-16T10:20:43.782Z",
     "is_superuser": true,
     "is_staff": true,
     "is_active": true,
@@ -51,9 +53,10 @@
     "username": "Ilya",
     "first_name": "Илья",
     "last_name": "Бойко",
-    "avatar": "users/avatars/c2ca5d19-1a0c-46af-b60e-3dd82fe49b30.png",
+    "avatar": "users/avatars/21c6d80f-ef27-4f29-8863-4cb16f624106.png",
     "groups": [],
-    "user_permissions": []
+    "user_permissions": [],
+    "shopping_carts": []
   }
 },
 {
@@ -134,7 +137,7 @@
   "fields": {
     "author": 35,
     "name": "Тест",
-    "image": "recipes/images/6d489021-fe29-47cd-ba68-f1cc360af342.jpg",
+    "image": "recipes/images/4768edca-2887-425b-b15b-d41f2dfa7c28.jpg",
     "text": "Тест",
     "cooking_time": 14,
     "pub_date": "2025-04-15T00:42:30.612Z"
@@ -17702,7 +17705,7 @@
 },
 {
   "model": "recipes.recipeingredient",
-  "pk": 78,
+  "pk": 79,
   "fields": {
     "recipe": 76,
     "ingredient": 1828,
