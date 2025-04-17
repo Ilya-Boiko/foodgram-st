@@ -57,7 +57,7 @@ class SetAvatarSerializer(serializers.ModelSerializer):
 
 class UserSubscriptionSerializer(UserSerializer):
     recipes = serializers.SerializerMethodField()
-    recipes_count = serializers.IntegerField(source='recipes.count', read_only=True)
+    recipes_count = serializers.SerializerMethodField()
 
     class Meta(UserSerializer.Meta):
         fields = (*UserSerializer.Meta.fields, 'recipes', 'recipes_count')
@@ -80,6 +80,9 @@ class UserSubscriptionSerializer(UserSerializer):
             many=True,
             context={'request': request}
         ).data
+
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
 class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
@@ -172,16 +175,15 @@ class CreateUpdateRecipeSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
-        recipe = Recipe.objects.create(**validated_data)
+        recipe = super().create(validated_data)
         self._create_ingredients(recipe, ingredients_data)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('ingredients')
         instance.recipe_ingredients.all().delete()
-        instance = super().update(instance, validated_data)
         self._create_ingredients(instance, ingredients_data)
-        return instance
+        return super().update(instance, validated_data)
 
     def _create_ingredients(self, recipe, ingredients_data):
         RecipeIngredient.objects.bulk_create(
